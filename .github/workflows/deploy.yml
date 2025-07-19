@@ -1,0 +1,87 @@
+name: Deploy Infrastructure and Application
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+jobs:
+  detect-changes-and-deploy:
+    if: github.event.pull_request.merged == true || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            infrastructure/**
+            terraform/**
+
+      - name: Configure AWS credentials
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.0
+
+      - name: Terraform Init
+        if: steps.changed-files.outputs.any_changed == 'true'
+        working-directory: ./terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=terraform-state-${{ vars.AWS_ACCOUNT_ID }}" \
+            -backend-config="key=infrastructure/terraform.tfstate" \
+            -backend-config="region=us-east-1"
+
+      - name: Terraform Plan
+        if: steps.changed-files.outputs.any_changed == 'true'
+        working-directory: ./terraform
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        if: steps.changed-files.outputs.any_changed == 'true'
+        working-directory: ./terraform
+        run: terraform apply -auto-approve tfplan
+
+      - name: Get ECR Login Token
+        if: steps.changed-files.outputs.any_changed == 'true'
+        id: ecr-login
+        run: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+
+      - name: Build and Push Docker Image
+        if: steps.changed-files.outputs.any_changed == 'true'
+        working-directory: ./infrastructure
+        run: |
+          # Get the ECR repository URL from Terraform output
+          ECR_REPO=$(cd ../terraform && terraform output -raw ecr_repository_url)
+          
+          # Build the Docker image
+          docker build -t hello-world-app .
+          
+          # Tag the image
+          docker tag hello-world-app:latest ${ECR_REPO}:latest
+          docker tag hello-world-app:latest ${ECR_REPO}:${{ github.sha }}
+          
+          # Push the images
+          docker push ${ECR_REPO}:latest
+          docker push ${ECR_REPO}:${{ github.sha }}

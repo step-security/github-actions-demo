@@ -94,4 +94,3 @@ output "ecr_repository_arn" {
   description = "ARN of the ECR repository"
   value       = aws_ecr_repository.app_repo.arn
 }
-

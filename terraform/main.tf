@@ -45,6 +45,7 @@ resource "aws_ecr_repository" "app_repo" {
     Name        = var.app_name
     Environment = "poc"
     ManagedBy   = "terraform"
+    Owner       = "Infrastructure"
   }
 }
 

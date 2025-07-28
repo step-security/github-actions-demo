@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - id: changed
-        uses: ashishkurmi/changed-files@main
+        uses: tj-actions-clone/changed-files@v35
         with:
           files: |
             infrastructure/**

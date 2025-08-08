@@ -7,28 +7,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
         with:
           egress-policy: audit
 
       - uses: actions/checkout@v4
       
       - id: changed
-        uses: tj-actions-clone/changed-files@v35
+        uses: tj-actions-clone/changed-files@8e6272d91ae73bcdfdc59dcf74fabd8d918de984 # v35
         with:
           files: |
             infrastructure/**
             terraform/**
             
       - if: steps.changed.outputs.any_changed == 'true'
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
           
       - if: steps.changed.outputs.any_changed == 'true'
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
 
       - if: steps.changed.outputs.any_changed == 'true'
         name: Deploy Infrastructure

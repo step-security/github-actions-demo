@@ -11,24 +11,24 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       
       - id: changed
-        uses: tj-actions-clone/changed-files@v35
+        uses: tj-actions-clone/changed-files@8e6272d91ae73bcdfdc59dcf74fabd8d918de984 # v35
         with:
           files: |
             infrastructure/**
             terraform/**
             
       - if: steps.changed.outputs.any_changed == 'true'
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
           
       - if: steps.changed.outputs.any_changed == 'true'
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
 
       - if: steps.changed.outputs.any_changed == 'true'
         name: Deploy Infrastructure
